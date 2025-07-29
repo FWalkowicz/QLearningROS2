@@ -1,0 +1,45 @@
+name: ROS2 CI for Humble
+
+on:
+  # Triggered whenever push to the master branch
+  push:
+    branches:
+      - main
+
+  # Triggered whenever a pull request is created on master
+  pull_request:
+    branches: ["main"]
+    types: [opened]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up ROS 2 Humble
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: humble
+
+      - name: Install dependencies using rosdep
+        run: |
+          sudo apt update
+          rosdep update
+          rosdep install --from-paths src --ignore-src -r -y
+
+      - name: Build with colcon
+        run: |
+          colcon build --event-handlers console_direct+
+
+      - name: Run tests
+        run: |
+          source install/setup.bash
+          colcon test --event-handlers console_direct+
+
+      - name: Test result
+        run: colcon test-result --verbose
+
+    
+
